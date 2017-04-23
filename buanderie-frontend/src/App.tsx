@@ -12,7 +12,7 @@ class App extends React.Component<{}, null> {
           <h2>607 Frederick Laundry</h2>
         </div>
         <p className="App-intro">
-          To get started, edit <code>src/App.tsx</code> and save to reload!
+          Nothing to see here yet!
         </p>
       </div>
     );
