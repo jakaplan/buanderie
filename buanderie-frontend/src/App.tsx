@@ -9,7 +9,7 @@ class App extends React.Component<{}, null> {
       <div className="App">
         <div className="App-header">
           <img src={logo} className="App-logo" alt="logo" />
-          <h2>607-609 Frederick</h2>
+          <h3>607 Frederick Laundry</h3>
         </div>
         <p className="App-intro">
           Nothing to see here yet!
