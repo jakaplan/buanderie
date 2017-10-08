@@ -11,11 +11,11 @@ class App extends React.Component<{}, null> {
           <img src={logo} className="App-logo" alt="logo" />
           <h3>607 Frederick Laundry</h3>
         </div>
-        <p className="App-intro">
-          Nothing to see here yet!
-        </p>
       </div>
     );
+  }
+
+  componentDidMount() {
   }
 }
 
