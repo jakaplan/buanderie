@@ -6,7 +6,7 @@ import StatusBar from './StatusBar';
 const logo = require('./logo.svg');
 
 // JSON keys as defined by the server
-const JSON_URL = 'http://frederick-607.appspot.com/';
+const JSON_URL = 'https://frederick-607.appspot.com/';
 const WASHER = 'washer';
 const DRYER = 'dryer';
 const TIMESTAMP = 'timestamp';
