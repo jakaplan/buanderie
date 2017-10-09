@@ -18,6 +18,12 @@ import json
 import time
 import random
 import logging
+import datetime
+
+epoch = datetime.datetime.utcfromtimestamp(0)
+
+def unix_time_millis(dt):
+    return (dt - epoch).total_seconds() * 1000.0
 
 class Reading(ndb.Model):
 	switch = ndb.StringProperty()
@@ -33,11 +39,11 @@ class MainPage(webapp2.RequestHandler):
 		response = {
 			'washer': {
 				'draw': washer.draw,
-				'timestamp': washer.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+				'timestamp': unix_time_millis(washer.timestamp)
 			},
 			'dryer': {
 				'draw': dryer.draw,
-				'timestamp': dryer.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+				'timestamp': unix_time_millis(dryer.timestamp)
 			}
 		}
 

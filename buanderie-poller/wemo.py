@@ -1,8 +1,23 @@
 from ouimeaux.environment import Environment
 import datetime
 import time
+import sys
+import argparse
 
+from collections import namedtuple
 from google.cloud import datastore
+
+Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
+
+def parse_args(raw_args):
+	description = "Reads Washer and Dryer Wemo Insights"
+	parser = argparse.ArgumentParser(description=description)
+	parser.add_argument('-d', '--sleep_interval', type=int, default=10,
+		help='Sleep time between reads, in seconds')
+	parser.add_argument('-s', '--debug', dest='debug', action='store_true',
+		help='Write readings to stdout instead of saving to the database')
+
+	return parser.parse_args(raw_args) 
 
 def on_switch(switch):
 	print("Found switch:", switch.name)
@@ -19,30 +34,29 @@ def startup():
 
 	return env.get_switch('Washer'), env.get_switch('Dryer')
 
-def upload():
+def upload(client, key, reading):
+	entity = datastore.Entity(key=key)
+	entity['switch'] = unicode(reading.switch)
+	entity['draw'] = int(reading.draw)
+	entity['timestamp'] = reading.timestamp
+	client.put(entity)
+
+def debug_print(_1, _2, reading):
+	print '%s\t%s\t%s' % (reading.switch, reading.draw, reading.timestamp)
+
+if __name__ == '__main__':
+	args = parse_args(sys.argv[1:])
+
+	washer, dryer = startup()
+
 	client = datastore.Client()
 	key = client.key('Reading')
 
-	washer = [line.strip().split('\t') for line in open('washer.txt')]
-	dryer = [line.strip().split('\t') for line in open('dryer.txt')]
-	i = 0
-	for entry in washer+dryer:
-		if i % 10 == 0: print i
-		entity = datastore.Entity(key=key)
-		entity['switch'] = unicode(entry[0])
-		entity['timestamp'] = datetime.datetime.strptime(entry[1], '%Y-%m-%d %H:%M:%S.%f')
-		entity['draw'] = int(entry[2])
-		client.put(entity)
-		i += 1
+	output_func = debug_print if args.debug else upload
 
-
-wash_out = open('washer.txt', 'w')
-dry_out = open('dryer.txt', 'w')
-if __name__ == '__main__':
-	washer, dryer = startup()
 	while True:
-		wash_out.write('Washer\t%s\t%s\n' % (datetime.datetime.utcnow(), washer.current_power))
-		dry_out.write('Dryer\t%s\t%s\n' % (datetime.datetime.utcnow(), dryer.current_power))
-		wash_out.flush()
-		dry_out.flush()
-		time.sleep(1)
+		wash_read = Reading('Washer',  washer.current_power, datetime.datetime.utcnow())
+		dry_read = Reading('Dryer', dryer.current_power, datetime.datetime.utcnow())
+		output_func(client, key, wash_read)
+		output_func(client, key, dry_read)
+		time.sleep(args.sleep_interval)
