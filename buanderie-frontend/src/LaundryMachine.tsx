@@ -44,7 +44,7 @@ class LaundryMachine extends React.Component<LaundryMachineProps, null> {
                 <div className="Machine-name">
                     {this.props.name}
                 </div>
-                <img src={this.props.image}/>
+                <img src={this.props.image} height={150}/>
                 <div className="Machine-status">
                     {displayStatus}
                 </div>
