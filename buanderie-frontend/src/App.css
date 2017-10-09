@@ -1,5 +1,6 @@
 .App {
   text-align: center;
+
 }
 
 .App-logo {
@@ -14,6 +15,5 @@
   color: white;
 }
 
-.App-intro {
-  font-size: large;
+.App-content {
 }
