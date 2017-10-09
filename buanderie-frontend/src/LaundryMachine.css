@@ -1,0 +1,35 @@
+.Laundry-machine {
+    border: 1px solid black;
+    border-radius: 5px;
+    
+    width: 200px;
+    height: 200px;
+
+    float: center;
+
+    margin: auto;
+
+}
+.Running {
+    background-color: #ffbdbd;
+}
+.Idle {
+    background-color: #e1f7d5;
+}
+.Unknown {
+    background-color: lightgrey;
+}
+
+.Machine-name {
+    margin-top: 5px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.Machine-status {
+
+}
+
+.Machine-wattage {
+
+}
