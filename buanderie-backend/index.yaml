@@ -1,0 +1,6 @@
+indexes:
+- kind: Reading
+  properties:
+  - name: switch
+  - name: timestamp
+    direction: desc
