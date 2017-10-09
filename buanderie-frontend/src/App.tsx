@@ -4,6 +4,8 @@ import LaundryMachine from './LaundryMachine';
 import StatusBar from './StatusBar';
 
 const logo = require('./logo.svg');
+const washer = require('./washer.svg');
+const dryer = require('./dryer.svg');
 
 // JSON keys as defined by the server
 const JSON_URL = 'https://frederick-607.appspot.com/';
@@ -33,8 +35,6 @@ class App extends React.Component<{}, AppState> {
                   washerDraw: undefined,
                   dryerTimestamp: undefined,
                   dryerDraw: undefined};
-
-    this.fetchDataFromServer();
   }
 
   render() {
@@ -47,20 +47,24 @@ class App extends React.Component<{}, AppState> {
         </div>
         
         <div className="App-content">
-          <LaundryMachine name="Washer" draw={this.state.washerDraw}/>
-          <LaundryMachine name="Dryer" draw={this.state.dryerDraw}/>
+          <LaundryMachine name="Washer" image={washer} draw={this.state.washerDraw}/>
+          <LaundryMachine name="Dryer" image={dryer} draw={this.state.dryerDraw}/>
         </div>
         
-        <StatusBar
-          attemptedConnection={this.state.attemptedConnection}
-          washerTimestamp={this.state.washerTimestamp}
-          dryerTimestamp={this.state.dryerTimestamp}
-        />
+        <footer>
+          <StatusBar
+            attemptedConnection={this.state.attemptedConnection}
+            washerTimestamp={this.state.washerTimestamp}
+            dryerTimestamp={this.state.dryerTimestamp}
+          />
+        </footer>
       </div>
     );
   }
 
   componentDidMount() {
+    this.fetchDataFromServer();
+
     this.timerID = window.setInterval(
         () => this.fetchDataFromServer(),
         5000

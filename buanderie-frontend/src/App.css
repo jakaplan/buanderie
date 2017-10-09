@@ -1,6 +1,10 @@
 .App {
   text-align: center;
 
+  display: flex;
+  flex-direction: column;
+  
+  height: 100vh;
 }
 
 .App-logo {
@@ -16,4 +20,17 @@
 }
 
 .App-content {
+  flex: 1;
+  align-self: center;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+}
+
+@media screen and (min-width: 400px) {
+  .App-content {
+      flex-direction: row;
+      width: 100vw;
+  }
 }

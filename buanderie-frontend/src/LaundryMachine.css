@@ -5,18 +5,16 @@
     width: 200px;
     height: 200px;
 
-    float: center;
-
-    margin: auto;
-
+    display: flex;
+    flex-direction: column;
 }
-.Running {
+.draw {
     background-color: #ffbdbd;
 }
-.Idle {
+.no_draw {
     background-color: #e1f7d5;
 }
-.Unknown {
+.draw_unknown {
     background-color: lightgrey;
 }
 
@@ -27,9 +25,7 @@
 }
 
 .Machine-status {
-
 }
 
 .Machine-wattage {
-
 }
