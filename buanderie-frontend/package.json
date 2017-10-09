@@ -3,10 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@types/gapi": "0.0.31",
-    "@types/gapi.auth2": "0.0.35",
     "@types/jest": "^19.2.2",
-    "@types/node": "^7.0.13",
     "@types/react": "^15.0.22",
     "@types/react-dom": "^15.5.0",
     "react": "^15.5.4",
