@@ -1,3 +1,7 @@
+html {
+  background-color: #222;
+}
+
 .App {
   text-align: center;
 
@@ -5,6 +9,8 @@
   flex-direction: column;
   
   height: 100vh;
+
+  background-color: #222;
 }
 
 .App-logo {
@@ -20,15 +26,20 @@
 }
 
 .App-content {
+  background-color: whitesmoke;
+
+  width: 100vw;
+
   flex: 1;
   align-self: center;
+
 
   display: flex;
   flex-direction: column;
   justify-content: space-evenly;
 }
 
-@media screen and (min-width: 400px) {
+@media screen and (min-width: 450px) {
   .App-content {
       flex-direction: row;
       width: 100vw;
