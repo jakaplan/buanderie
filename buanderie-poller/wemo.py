@@ -12,9 +12,9 @@ Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
 def parse_args(raw_args):
 	description = "Reads Washer and Dryer Wemo Insights"
 	parser = argparse.ArgumentParser(description=description)
-	parser.add_argument('-d', '--sleep_interval', type=int, default=10,
+	parser.add_argument('-s', '--sleep_interval', type=int, default=10,
 		help='Sleep time between reads, in seconds')
-	parser.add_argument('-s', '--debug', dest='debug', action='store_true',
+	parser.add_argument('-d', '--debug', dest='debug', action='store_true',
 		help='Write readings to stdout instead of saving to the database')
 
 	return parser.parse_args(raw_args) 
