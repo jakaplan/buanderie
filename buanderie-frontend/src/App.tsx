@@ -47,8 +47,18 @@ class App extends React.Component<{}, AppState> {
         </div>
         
         <div className="App-content">
-          <LaundryMachine name="Washer" image={washer} draw={this.state.washerDraw}/>
-          <LaundryMachine name="Dryer" image={dryer} draw={this.state.dryerDraw}/>
+          <LaundryMachine
+            name="Washer"
+            image={washer}
+            draw={this.state.washerDraw}
+            timestamp={this.state.washerTimestamp}
+          />
+          <LaundryMachine
+            name="Dryer"
+            image={dryer}
+            draw={this.state.dryerDraw}
+            timestamp={this.state.dryerTimestamp}
+          />
         </div>
         
         <footer>
@@ -79,9 +89,9 @@ class App extends React.Component<{}, AppState> {
   simulateFetchDataFromServer() {
       this.setState({
         attemptedConnection: true,
-        washerTimestamp: Date.now(),
+        washerTimestamp: (Date.now() - 12000),
         washerDraw: Math.floor(Math.random() * 500),
-        dryerTimestamp: Date.now(),
+        dryerTimestamp: (Date.now() - 1210),
         dryerDraw: 0
       });
   }
