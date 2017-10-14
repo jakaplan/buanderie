@@ -12,7 +12,7 @@ Once pip is installed, virtualenv can be installed:
 
 Then use virtualenv to create its environment folder by typing
 `virtualenv env`. This will create a folder called `env` which
-git has already been configured to be ignored.
+git has already been configured to ignore.
 
 Then use the virtualenv's pip to install dependencies:
 `env/bin/pip -r requirements.txt`
