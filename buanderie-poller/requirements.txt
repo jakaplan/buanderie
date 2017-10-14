@@ -1,0 +1,3 @@
+### Dependencies ###
+ouimeaux==0.8.0
+google-cloud-datastore==1.3.0
