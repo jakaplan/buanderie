@@ -24,13 +24,12 @@ credentials are adapted from
 https://developers.google.com/identity/protocols/application-default-credentials.
 
 Get hold of the service account key (intentionally not stored in this repository).
-It is named `607 Frederick-642acd401797.json`. Now set this as an environmental
+It is named `607 Frederick-642acd401797.json`. Now set this as an environment
 variable:
 `export GOOGLE_APPLICATION_CREDENTIALS=<path to json file>`
 
 **TODO** Figure out how to set the Google Cloud credentials within the virtualenv
 instead of globally.
-
 
 Now we're ready to run the poller:
 `env/bin/python wemo.py`
