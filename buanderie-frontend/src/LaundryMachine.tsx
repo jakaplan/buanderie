@@ -8,10 +8,10 @@ export interface LaundryMachineProps {
     timestamp?: number;
 }
 
-class LaundryMachine extends React.Component<LaundryMachineProps, null> {
+class LaundryMachine extends React.Component<LaundryMachineProps, {}> {
 
     constructor(props: LaundryMachineProps) {
-        super(props);
+        super(props, {});
     }
     
     render() {

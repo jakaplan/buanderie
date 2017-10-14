@@ -7,10 +7,10 @@ export interface StatusBarProps {
     dryerTimestamp?: number;
 }
 
-class StatusBar extends React.Component<StatusBarProps, null> {
+class StatusBar extends React.Component<StatusBarProps, {}> {
     
     constructor(props: StatusBarProps) {
-        super(props);
+        super(props, {});
     }
     
     render() {
