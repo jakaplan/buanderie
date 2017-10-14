@@ -1,4 +1,4 @@
-## Setup instructionsO
+## Setup instructions
 Overview:
  - Install Python, pip, and virtualenv.
  - Install dependencies.
@@ -28,7 +28,7 @@ It is named `607 Frederick-642acd401797.json`. Now set this as an environmental
 variable:
 `export GOOGLE_APPLICATION_CREDENTIALS=<path to json file>`
 
-TODO - Figure out how to set the Google Cloud credentials within the virtualenv
+**TODO** Figure out how to set the Google Cloud credentials within the virtualenv
 instead of globally.
 
 
