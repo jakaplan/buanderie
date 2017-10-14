@@ -4,7 +4,7 @@ import './LaundryMachine.css';
 export interface LaundryMachineProps {
     name: string;
     image: string;
-    draw?: number; // This is in milliwatts
+    milliwatts?: number;
     timestamp?: number;
 }
 
@@ -24,17 +24,17 @@ class LaundryMachine extends React.Component<LaundryMachineProps, {}> {
             cssStatus = 'draw_unknown';
             displayStatus = 'Data out of date';
         } else { // Otherwise, use draw information
-            if (this.props.draw === undefined) {
+            if (this.props.milliwatts === undefined) {
                 cssStatus = 'draw_unknown';
                 displayStatus = 'Fetching status...';
-            } else if (this.props.draw === 0) {
+            } else if (this.props.milliwatts === 0) {
                 cssStatus = 'no_draw';
                 displayStatus = 'Available';
             } else {
                 cssStatus = 'draw';
 
                 // Display wattage to the nearest tenth of a watt and always show a decimal point
-                let roundedWattage = Math.round(this.props.draw / 100) / 10;
+                let roundedWattage = Math.round(this.props.milliwatts / 100) / 10;
                 let wattageDisplay = roundedWattage + '';
                 if (!wattageDisplay.includes('.')) {
                     wattageDisplay += '.0';
