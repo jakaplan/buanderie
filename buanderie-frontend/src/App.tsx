@@ -4,22 +4,24 @@ import LaundryMachine from './LaundryMachine';
 import StatusBar from './StatusBar';
 
 const logo = require('./logo.svg');
+const washer = require('./washer.svg');
+const dryer = require('./dryer.svg');
 
 // JSON keys as defined by the server
-const JSON_URL = 'http://frederick-607.appspot.com/';
+const JSON_URL = 'https://frederick-607.appspot.com/';
 const WASHER = 'washer';
 const DRYER = 'dryer';
 const TIMESTAMP = 'timestamp';
-const DRAW = 'draw';
+const MILLIWATTS = 'draw';
 
 interface AppState {
   attemptedConnection: boolean;
 
   washerTimestamp?: number;
-  washerDraw?: number;
+  washerMilliwatts?: number;
 
   dryerTimestamp?: number;
-  dryerDraw?: number;
+  dryerMilliwatts?: number;
 }
 
 class App extends React.Component<{}, AppState> {
@@ -30,11 +32,9 @@ class App extends React.Component<{}, AppState> {
 
     this.state = {attemptedConnection: false,
                   washerTimestamp: undefined,
-                  washerDraw: undefined,
+                  washerMilliwatts: undefined,
                   dryerTimestamp: undefined,
-                  dryerDraw: undefined};
-
-    this.fetchDataFromServer();
+                  dryerMilliwatts: undefined};
   }
 
   render() {
@@ -47,20 +47,34 @@ class App extends React.Component<{}, AppState> {
         </div>
         
         <div className="App-content">
-          <LaundryMachine name="Washer" draw={this.state.washerDraw}/>
-          <LaundryMachine name="Dryer" draw={this.state.dryerDraw}/>
+          <LaundryMachine
+            name="Washer"
+            image={washer}
+            milliwatts={this.state.washerMilliwatts}
+            timestamp={this.state.washerTimestamp}
+          />
+          <LaundryMachine
+            name="Dryer"
+            image={dryer}
+            milliwatts={this.state.dryerMilliwatts}
+            timestamp={this.state.dryerTimestamp}
+          />
         </div>
         
-        <StatusBar
-          attemptedConnection={this.state.attemptedConnection}
-          washerTimestamp={this.state.washerTimestamp}
-          dryerTimestamp={this.state.dryerTimestamp}
-        />
+        <footer>
+          <StatusBar
+            attemptedConnection={this.state.attemptedConnection}
+            washerTimestamp={this.state.washerTimestamp}
+            dryerTimestamp={this.state.dryerTimestamp}
+          />
+        </footer>
       </div>
     );
   }
 
   componentDidMount() {
+    this.fetchDataFromServer();
+
     this.timerID = window.setInterval(
         () => this.fetchDataFromServer(),
         5000
@@ -75,10 +89,10 @@ class App extends React.Component<{}, AppState> {
   simulateFetchDataFromServer() {
       this.setState({
         attemptedConnection: true,
-        washerTimestamp: Date.now(),
-        washerDraw: Math.floor(Math.random() * 500),
-        dryerTimestamp: Date.now(),
-        dryerDraw: 0
+        washerTimestamp: (Date.now() - 12000),
+        washerMilliwatts: Math.floor(Math.random() * 500),
+        dryerTimestamp: (Date.now() - 1210),
+        dryerMilliwatts: 0
       });
   }
 
@@ -92,9 +106,9 @@ class App extends React.Component<{}, AppState> {
           app.setState({
               attemptedConnection: true,
               washerTimestamp: undefined,
-              washerDraw: undefined,
+              washerMilliwatts: undefined,
               dryerTimestamp: undefined,
-              dryerDraw: undefined
+              dryerMilliwatts: undefined
           });
 
           return;
@@ -104,9 +118,9 @@ class App extends React.Component<{}, AppState> {
           app.setState({
             attemptedConnection: true,
             washerTimestamp: data[WASHER][TIMESTAMP],
-            washerDraw: data[WASHER][DRAW],
+            washerMilliwatts: data[WASHER][MILLIWATTS],
             dryerTimestamp: data[DRYER][TIMESTAMP],
-            dryerDraw: data[DRYER][DRAW]
+            dryerMilliwatts: data[DRYER][MILLIWATTS]
           });
         });  
       }  
@@ -115,9 +129,9 @@ class App extends React.Component<{}, AppState> {
       app.setState({
         attemptedConnection: true,
         washerTimestamp: undefined,
-        washerDraw: undefined,
+        washerMilliwatts: undefined,
         dryerTimestamp: undefined,
-        dryerDraw: undefined
+        dryerMilliwatts: undefined
       });
     });
   }

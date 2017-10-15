@@ -7,10 +7,10 @@ export interface StatusBarProps {
     dryerTimestamp?: number;
 }
 
-class StatusBar extends React.Component<StatusBarProps, null> {
+class StatusBar extends React.Component<StatusBarProps, {}> {
     
     constructor(props: StatusBarProps) {
-        super(props);
+        super(props, {});
     }
     
     render() {
@@ -27,26 +27,34 @@ class StatusBar extends React.Component<StatusBarProps, null> {
                     lastUpdatedTimestamp = this.props.dryerTimestamp;
                 }
 
-                let lastUpdatedDate = new Date(lastUpdatedTimestamp);
-
-                let updatedDateString = (lastUpdatedDate.getMonth() + 1) + '/' + lastUpdatedDate.getDate();
-                let updatedTimeString = (lastUpdatedDate.getHours() + 1).toString();
-                let updatedAMPMString = 'AM';
-                if (lastUpdatedDate.getHours() >= 12) {
-                    updatedTimeString = (lastUpdatedDate.getHours() - 12).toString();
-                    updatedAMPMString = 'PM';
+                // If timestamp is more than 60 seconds old
+                if (Date.now() - lastUpdatedTimestamp > 60000) {
+                    let lastUpdatedDate = new Date(lastUpdatedTimestamp);
+                    
+                    let updatedDateString = (lastUpdatedDate.getMonth() + 1) + '/' + lastUpdatedDate.getDate();
+                    let updatedTimeString = (lastUpdatedDate.getHours() + 1).toString();
+                    let updatedAMPMString = 'AM';
+                    if (lastUpdatedDate.getHours() >= 12) {
+                        updatedTimeString = (lastUpdatedDate.getHours() - 12).toString();
+                        updatedAMPMString = 'PM';
+                    }
+                    updatedTimeString += ':';
+                    updatedTimeString += lastUpdatedDate.getMinutes() < 10 ? '0' : '';
+                    updatedTimeString += lastUpdatedDate.getMinutes();
+                    updatedTimeString += ':';
+                    updatedTimeString += lastUpdatedDate.getSeconds() < 10 ? '0' : '';
+                    updatedTimeString += lastUpdatedDate.getSeconds();
+                    updatedTimeString += ' ';
+                    updatedTimeString += updatedAMPMString;
+    
+                    let updatedDateTimeString = updatedDateString + ' ' + updatedTimeString;
+                    status = 'Last Updated: ' + updatedDateTimeString;
+                } else {
+                    let updatedAgoSeconds = Math.round((Date.now() - lastUpdatedTimestamp) / 1000);
+                    status = 'Last Updated: ' + updatedAgoSeconds + ' ' +
+                             (updatedAgoSeconds === 1 ? 'second' : 'seconds') + 
+                             ' ago';
                 }
-                updatedTimeString += ':';
-                updatedTimeString += lastUpdatedDate.getMinutes() < 10 ? '0' : '';
-                updatedTimeString += lastUpdatedDate.getMinutes();
-                updatedTimeString += ':';
-                updatedTimeString += lastUpdatedDate.getSeconds() < 10 ? '0' : '';
-                updatedTimeString += lastUpdatedDate.getSeconds();
-                updatedTimeString += ' ';
-                updatedTimeString += updatedAMPMString;
-
-                let updatedDateTimeString = updatedDateString + ' ' + updatedTimeString;
-                status = 'Last Updated: ' + updatedDateTimeString;
             } else {
                 status = 'Failed to get data, retrying...';
             }

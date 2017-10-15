@@ -3,45 +3,59 @@ import './LaundryMachine.css';
 
 export interface LaundryMachineProps {
     name: string;
-    draw?: number;
+    image: string;
+    milliwatts?: number;
+    timestamp?: number;
 }
 
-class LaundryMachine extends React.Component<LaundryMachineProps, null> {
+class LaundryMachine extends React.Component<LaundryMachineProps, {}> {
 
     constructor(props: LaundryMachineProps) {
-        super(props);
+        super(props, {});
     }
     
     render() {
-        // Status based on wattage
-        let status: string;
-        if (this.props.draw === undefined) {
-            status = 'Unknown';
-        } else if (this.props.draw === 0) {
-            status = 'Idle';
-        } else {
-            status = 'Running';
+        // Status based on recency of data and wattage
+        let displayStatus: string;
+        let cssStatus: string;
+
+        // If timestamp is more than 60 seconds old
+        if (this.props.timestamp && (Date.now() - this.props.timestamp > 60000)) {
+            cssStatus = 'draw_unknown';
+            displayStatus = 'Data out of date';
+        } else { // Otherwise, use draw information
+            if (this.props.milliwatts === undefined) {
+                cssStatus = 'draw_unknown';
+                displayStatus = 'Fetching status...';
+            } else if (this.props.milliwatts === 0) {
+                cssStatus = 'no_draw';
+                displayStatus = 'Available';
+            } else {
+                cssStatus = 'draw';
+
+                // Display wattage to the nearest tenth of a watt and always show a decimal point
+                let roundedWattage = Math.round(this.props.milliwatts / 100) / 10;
+                let wattageDisplay = roundedWattage + '';
+                if (!wattageDisplay.includes('.')) {
+                    wattageDisplay += '.0';
+                }
+                wattageDisplay += 'W';
+
+                displayStatus = 'Running (' + wattageDisplay + ')';
+            }
         }
 
-        // Use the status as the class name to differ the CSS
-        let rootClassName: string = 'Laundry-machine ' + status;
-
-        // Only display wattage value if it is known
-        let wattageDisplay = '';
-        if (this.props.draw) {
-            wattageDisplay = this.props.draw / 1000 + 'W';
-        }
+        // Use the css status as the class name to change the background color via CSS
+        let rootClassName: string = 'Laundry-machine ' + cssStatus;
 
         return (
             <div className={rootClassName}>
                 <div className="Machine-name">
                     {this.props.name}
                 </div>
+                <img src={this.props.image} height={150}/>
                 <div className="Machine-status">
-                    Status: {status}
-                </div>
-                <div className="Machine-wattage">
-                    {wattageDisplay}
+                    {displayStatus}
                 </div>
             </div>
           );
