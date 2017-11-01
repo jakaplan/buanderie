@@ -48,12 +48,18 @@ def debug_print(reading):
 	sys.stdout.flush()
 
 if __name__ == '__main__':
+    print("Poller starting...")
+	sys.stdout.flush()
+
 	args = parse_args(sys.argv[1:])
 
 	machines = startup()
 
 	client = datastore.Client()
 	key = client.key('Reading')
+
+	print("About to start read and upload loop")
+	sys.stdout.flush()
 
 	while True:
 		for machine in machines:
