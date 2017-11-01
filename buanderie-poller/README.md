@@ -15,7 +15,7 @@ Then use virtualenv to create its environment folder by typing
 git has already been configured to ignore.
 
 Then use the virtualenv's pip to install dependencies:
-`env/bin/pip -r requirements.txt`
+`env/bin/pip install -r requirements.txt`
 
 At this point the Python code in `wemo.py` can run, but it will throw an
 exception because this code makes calls to the Google Cloud which
