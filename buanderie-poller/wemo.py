@@ -48,7 +48,7 @@ def debug_print(reading):
 	sys.stdout.flush()
 
 if __name__ == '__main__':
-    print("Poller starting...")
+	print("Poller starting...")
 	sys.stdout.flush()
 
 	args = parse_args(sys.argv[1:])
