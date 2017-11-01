@@ -21,9 +21,11 @@ def parse_args(raw_args):
 
 def on_switch(switch):
 	print("Found switch:", switch.name)
+	sys.stdout.flush()
 
 def on_motion(motion):
 	print("Well, this is unexpected! Found:", motion.name)
+	sys.stdout.flush()
 
 # return the devices
 def startup():
@@ -43,6 +45,7 @@ def upload(client, key, reading):
 
 def debug_print(_1, _2, reading):
 	print '%s\t%s\t%s' % (reading.switch, reading.draw, reading.timestamp)
+	sys.stdout.flush()
 
 if __name__ == '__main__':
 	args = parse_args(sys.argv[1:])
