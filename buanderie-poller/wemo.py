@@ -32,7 +32,7 @@ def startup():
 	env = Environment(on_switch, on_motion)
 	env.start()
 
-	env.discover(seconds=10)
+	env.discover(seconds=20)
 
 	return env.get_switch('Washer'), env.get_switch('Dryer')
 
