@@ -6,6 +6,7 @@ import argparse
 
 from collections import namedtuple
 from google.cloud import datastore
+from google.api.core.exceptions import GatewayTimeout
 
 Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
 
@@ -41,7 +42,29 @@ def upload(client, key, reading):
 	entity['switch'] = unicode(reading.switch)
 	entity['draw'] = int(reading.draw)
 	entity['timestamp'] = reading.timestamp
-	client.put(entity)
+
+    # According to https://cloud.google.com/pubsub/docs/reference/error-codes
+	# for the DEADLINE_EXCEEDED 504 error code:
+	# "The request did not complete in the time allocated. This can be caused
+	# by network issues from the client to the server, and it can also occur
+	# rarely on the server. On this error, the server may or may not execute
+	# the operation requested.	
+	# 
+	# Typically the client would retry the operation. Keep in mind that this
+	# may result in the operation being executed more than once on the server."
+	#
+	# As a result, if this error is encountered we'll retry once.
+	try:
+		client.put(entity)
+	except GatewayTimeout as err:
+		print("!!! GatewayTimeout ¡¡¡")
+		print(err)
+		print(">>> About to retry...")
+		sys.stdout.flush()
+
+		# Try once more
+		client.put(entity)
+
 
 def debug_print(reading):
 	print '%s\t%s\t%s' % (reading.switch, reading.draw, reading.timestamp)
@@ -69,7 +92,6 @@ if __name__ == '__main__':
 				debug_print(reading)
 			else:
 				upload(client, key, reading)
-
 			
 			machine.on()	# ensure that switch is turned back on in case of power failure
 			time.sleep(args.sleep_interval)
