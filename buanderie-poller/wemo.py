@@ -8,6 +8,17 @@ from collections import namedtuple
 from google.cloud import datastore
 from google.api.core.exceptions import GatewayTimeout
 
+# Terminal color codes
+class TerminalColors:
+	HEADER = '\033[95m'
+	OKBLUE = '\033[94m'
+	OKGREEN = '\033[92m'
+	WARNING = '\033[93m'
+	FAIL = '\033[91m'
+	BOLD = '\033[1m'
+	UNDERLINE = '\033[4m'
+	ENDC = '\033[0m'
+
 Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
 
 def parse_args(raw_args):
@@ -21,11 +32,11 @@ def parse_args(raw_args):
 	return parser.parse_args(raw_args) 
 
 def on_switch(switch):
-	print("Found switch:", switch.name)
+	print(TerminalColors.OKGREEN + "Found switch: " + switch.name + TerminalColors.ENDC)
 	sys.stdout.flush()
 
 def on_motion(motion):
-	print("Well, this is unexpected! Found:", motion.name)
+	print(TerminalColors.WARNING + "Well, this is unexpected! Found: " + motion.name + TerminalColors.ENDC)
 	sys.stdout.flush()
 
 # return the devices
@@ -57,21 +68,19 @@ def upload(client, key, reading):
 	try:
 		client.put(entity)
 	except GatewayTimeout as err:
-		print("!!! GatewayTimeout")
-		print(err)
-		print(">>> About to retry...")
+		print(TerminalColors.FAIL +  "GatewayTimeout: " + err + TerminalColors.ENDC)
+		print("About to retry...")
 		sys.stdout.flush()
 
 		# Try once more
 		client.put(entity)
-
 
 def debug_print(reading):
 	print '%s\t%s\t%s' % (reading.switch, reading.draw, reading.timestamp)
 	sys.stdout.flush()
 
 if __name__ == '__main__':
-	print("Poller starting...")
+	print(TerminalColors.OKGREEN + TerminalColors.BOLD + "Poller starting..." + TerminalColors.ENDC)
 	sys.stdout.flush()
 
 	args = parse_args(sys.argv[1:])
@@ -81,7 +90,7 @@ if __name__ == '__main__':
 	client = datastore.Client()
 	key = client.key('Reading')
 
-	print("About to start read and upload loop")
+	print(TerminalColors.OKGREEN + "Starting read and upload loop..." + TerminalColors.ENDC)
 	sys.stdout.flush()
 
 	while True:
@@ -95,4 +104,3 @@ if __name__ == '__main__':
 			
 			machine.on()	# ensure that switch is turned back on in case of power failure
 			time.sleep(args.sleep_interval)
-
