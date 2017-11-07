@@ -57,7 +57,7 @@ def upload(client, key, reading):
 	try:
 		client.put(entity)
 	except GatewayTimeout as err:
-		print("!!! GatewayTimeout ¡¡¡")
+		print("!!! GatewayTimeout")
 		print(err)
 		print(">>> About to retry...")
 		sys.stdout.flush()
