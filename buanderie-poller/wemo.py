@@ -131,7 +131,7 @@ def print_and_flush(text):
 
 # Main function, where it all begins
 if __name__ == '__main__':
-	print_and_flush("Poller starting...")
+	print_and_flush("\nPoller starting...")
 
 	args = parse_args(sys.argv[1:])
 	if args.debug:
