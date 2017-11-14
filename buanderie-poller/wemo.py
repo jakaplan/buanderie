@@ -37,7 +37,7 @@ def startup():
 
 	return env.get_switch('Washer'), env.get_switch('Dryer')
 
-def upload(client, key, reading):
+def upload(client, key, reading, retries_remaining=1):
 	entity = datastore.Entity(key=key)
 	entity['switch'] = unicode(reading.switch)
 	entity['draw'] = int(reading.draw)
@@ -53,17 +53,23 @@ def upload(client, key, reading):
 	# Typically the client would retry the operation. Keep in mind that this
 	# may result in the operation being executed more than once on the server."
 	#
-	# As a result, if this error is encountered we'll retry once.
+	# As a result, if this error is encountered we'll retry if we haven't
+	# reached out retry limit.
 	try:
 		client.put(entity)
 	except GatewayTimeout as err:
-		print("!!! GatewayTimeout, about to retry...")
-		sys.stdout.flush()
+		# If we haven't hit the retry limit, retry
+		if retries_remaining > 0:
+			print("!!! GatewayTimeout. Retries remaining: %d. About to retry..." % retries_remaining)
+			sys.stdout.flush()
+			
+			upload(client, key, reading, retries_remaining - 1)
 
-		# Try once more
-		client.put(entity)
-		print("...retry successful!")
-		sys.stdout.flush()
+			print("...retry successful!")
+			sys.stdout.flush()
+		else:
+			print("!!! GatewayTimeout. Retry limit reached :(")
+			raise
 
 def debug_print(reading):
 	print '%s\t%s\t%s' % (reading.switch, reading.draw, reading.timestamp)
@@ -90,7 +96,7 @@ if __name__ == '__main__':
 			if args.debug:
 				debug_print(reading)
 			else:
-				upload(client, key, reading)
+				upload(client, key, reading, 2)
 			
 			machine.on()	# ensure that switch is turned back on in case of power failure
 			time.sleep(args.sleep_interval)
