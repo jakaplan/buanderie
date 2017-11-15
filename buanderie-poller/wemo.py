@@ -1,12 +1,13 @@
-from ouimeaux.environment import Environment
-import datetime
-import time
-import sys
 import argparse
+import datetime
+import sys
+import time
 
 from collections import namedtuple
 from google.cloud import datastore
 from google.api.core.exceptions import GatewayTimeout
+from ouimeaux.environment import Environment
+from threading import Thread
 
 Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
 
@@ -30,13 +31,13 @@ def parse_args(raw_args):
 
 # Called when a switch is discovered.
 # Each time a switch is discovered a check is done to see if both switches have
-# been found and if so the main loop is started.
+# been found and if so the read and upload loop is started on a new thread.
 def on_switch(switch):
 	print_and_flush("Found switch: " + switch.name)
 
-	start_main_loop_if_ready()
+	start_read_and_upload_loop_if_ready()
 
-# Discovers devices
+# Discovers WeMo devices
 def discover_switches():
 	global environment
 	environment = Environment(on_switch)
@@ -48,11 +49,10 @@ def discover_switches():
 
 	print_and_flush("Discovery broadcast complete")
 
-	# If after discovery is completed we didn't find both switches, then quit.
+	# If after discovery is completed we didn't find both switches
 	switches = environment.list_switches()
-	if 'Washer' not in switches and 'Dryer' not in switches:
+	if 'Washer' not in switches or 'Dryer' not in switches:
 		print_and_flush("!!! Failed to find both switches before broadcast timeout of %d seconds" % args.discovery_timeout)
-		quit()
 
 # Uploads data to Google		
 def upload(client, key, reading, retries_remaining=1):
@@ -94,22 +94,30 @@ def debug_print(reading):
 	print_and_flush('%s\t%s\t%s' % (reading.switch, reading.draw, reading.timestamp))
 	sys.stdout.flush()
 
-# Checks if both switches are found, if so, starts main loop
-def start_main_loop_if_ready():
+# Checks if both switches are found, if so, starts loop
+def start_read_and_upload_loop_if_ready():
 	switches = environment.list_switches()
 	if 'Washer' in switches and 'Dryer' in switches:
 		washer = environment.get_switch('Washer')
 		dryer = environment.get_switch('Dryer')
-		switches = (washer, dryer)
-		main_loop(switches)
 
-# Main loop indefinitely reads power draw of switches and uploads the readings
-def main_loop(switches):
+		# Start loop on new thread so that it will run indefinitely
+		thread = Thread(target = read_and_upload_loop, args=(washer, dryer), name='ReadAndUploadThread')
+		thread.start()
+
+# Loop that indefinitely reads power draw of switches and uploads the readings
+def read_and_upload_loop(washer, dryer):
+	switches = (washer, dryer)
+
+	# Don't initialize the Google Cloud datastore unless running in production
+	# mode because it requires the GOOGLE_APPLICATION_CREDENTIALS to be set.
+	# Note that the way Python scoping works these variables have function
+	# scope (as there's no such thing as block scope in Python).
+	if not args.debug:
+		client = datastore.Client()
+		key = client.key('Reading')
+
 	print_and_flush("Starting read and upload loop...")
-
-	client = datastore.Client()
-	key = client.key('Reading')
-
 	while True:
 		for switch in switches:
 			reading = Reading(switch.name, switch.current_power, datetime.datetime.utcnow())
@@ -118,7 +126,7 @@ def main_loop(switches):
 				debug_print(reading)
 			else:
 				upload(client, key, reading, 2)
-			
+
 			switch.on()	# ensure that switch is turned back on in case of power failure
 			time.sleep(args.sleep_interval)
 
@@ -129,7 +137,7 @@ def print_and_flush(text):
 	print(text)
 	sys.stdout.flush()
 
-# Main function, where it all begins
+# Main, where it all begins
 if __name__ == '__main__':
 	print_and_flush("\nPoller starting...")
 
@@ -139,6 +147,7 @@ if __name__ == '__main__':
 	else:
 		print_and_flush("Running in production mode")
 
-	# Discovers switches. Once both switches are found the main loop will start.
-	# If neither switch is found this script will terminate.
+	# Discovers switches. Once both switches are found the read and upload
+	# loop thread will start. If both switches aren't found then after
+	# control returns here the script will terminate.
 	discover_switches()
