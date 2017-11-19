@@ -125,7 +125,7 @@ def read_and_upload_loop(washer, dryer):
 			if args.debug:
 				debug_print(reading)
 			else:
-				upload(client, key, reading, 2)
+				upload(client, key, reading, 10)
 
 			switch.on()	# ensure that switch is turned back on in case of power failure
 			time.sleep(args.sleep_interval)
