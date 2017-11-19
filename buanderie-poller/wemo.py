@@ -11,6 +11,12 @@ from threading import Thread
 
 Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
 
+# Constants
+READ_INTERVAL = 5 # Sleep time between reading a switch and then uploading data
+DISCOVERY_TIMEOUT = 180 # Duration of WeMo switch discovery broadcast
+UPLOAD_RETRIES = 10 # How many times to retry uploading a reading to Google
+
+
 environment = None # WeMo switch environment, used for discovery
 args = None # Parsed command line arguments
 
@@ -20,12 +26,14 @@ args = None # Parsed command line arguments
 def parse_args(raw_args):
 	description = "Reads Washer and Dryer Wemo Insights"
 	parser = argparse.ArgumentParser(description=description)
-	parser.add_argument('-s', '--sleep_interval', type=int, default=5,
-		help='Sleep time between reads, in seconds')
 	parser.add_argument('-d', '--debug', dest='debug', action='store_true',
 		help='Write readings to stdout instead of saving to the database')
-	parser.add_argument('-t', '--discovery_timeout', type=int, default=180,
+	parser.add_argument('-s', '--sleep_interval', type=int, default=READ_INTERVAL,
+		help='Sleep time between reads, in seconds')
+	parser.add_argument('-t', '--discovery_timeout', type=int, default=DISCOVERY_TIMEOUT,
 		help='WeMo switch discovery timeout, in seconds')
+	parser.add_argument('-r', '--upload_retries', type=int, default=UPLOAD_RETRIES,
+		help='Number of times to retry uploading a reading to Google')
 
 	return parser.parse_args(raw_args) 
 
@@ -117,7 +125,7 @@ def read_and_upload_loop(washer, dryer):
 		client = datastore.Client()
 		key = client.key('Reading')
 
-	print_and_flush("Starting read and upload loop...")
+	print_and_flush("Starting read and upload loop with %d upload retries" % args.upload_retries)
 	while True:
 		for switch in switches:
 			reading = Reading(switch.name, switch.current_power, datetime.datetime.utcnow())
@@ -125,7 +133,7 @@ def read_and_upload_loop(washer, dryer):
 			if args.debug:
 				debug_print(reading)
 			else:
-				upload(client, key, reading, 10)
+				upload(client, key, reading, args.upload_retries)
 
 			switch.on()	# ensure that switch is turned back on in case of power failure
 			time.sleep(args.sleep_interval)
