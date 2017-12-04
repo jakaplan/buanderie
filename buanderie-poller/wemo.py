@@ -17,7 +17,7 @@ READ_INTERVAL = 5 # Sleep time between reading a switch and then uploading data
 DISCOVERY_TIMEOUT = 180 # Duration of WeMo switch discovery broadcast
 UPLOAD_RETRIES = 10 # How many times to retry uploading a reading to Google
 
-
+# Global variables
 environment = None # WeMo switch environment, used for discovery
 args = None # Parsed command line arguments
 
@@ -130,13 +130,19 @@ def read_and_upload_loop(washer, dryer):
 	print_and_flush("Starting read and upload loop with %d upload retries" % args.upload_retries)
 	while True:
 		for switch in switches:
+			reading_start = datetime.datetime.utcnow()
+			
 			try:
-				reading_start = datetime.datetime.utcnow()
 				reading = Reading(switch.name, switch.current_power, datetime.datetime.utcnow())
 			except ConnectionError as err:
 				elapsed_time_seconds = (datetime.datetime.utcnow() - reading_start).total_seconds()
-				print_and_flush("!!! Reading switch failed after %d seconds" % elapsed_time_seconds)
+				print_and_flush("!!! Reading switch %s failed after %s seconds" % (switch.name, elapsed_time_seconds))
 				raise
+			
+			# If it took more than 60 seconds to read, print out to track this happening
+			reading_duration_seconds = (datetime.datetime.utcnow() - reading_start).total_seconds()
+			if reading_duration_seconds > 60:
+				print_and_flush("!!! Reading switch %s succeeded after %s seconds" % (switch.name, reading_duration_seconds))
 
 			if args.debug:
 				debug_print(reading)
