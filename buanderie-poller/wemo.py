@@ -63,7 +63,7 @@ def discover_switches():
 		print_and_flush("!!! Failed to find both switches before broadcast timeout of %d seconds" % args.discovery_timeout)
 
 # Uploads data to Google		
-def upload(client, key, reading, retries_remaining=1):
+def upload(client, key, reading, retries_remaining=1, first_call=True):
 	entity = datastore.Entity(key=key)
 	entity['switch'] = unicode(reading.switch)
 	entity['draw'] = int(reading.draw)
@@ -86,15 +86,16 @@ def upload(client, key, reading, retries_remaining=1):
 	except GatewayTimeout as err:
 		# If we haven't hit the retry limit, retry
 		if retries_remaining > 0:
-			print("!!! GatewayTimeout. Retries remaining: %d. About to retry..." % retries_remaining)
-			sys.stdout.flush()
+			print_and_flush("!!! GatewayTimeout. Retries remaining: %d. About to retry..." % retries_remaining)
 			
-			upload(client, key, reading, retries_remaining - 1)
-
-			print("...retry successful!")
-			sys.stdout.flush()
+			upload(client, key, reading, retries_remaining - 1, False)
+			
+			# Only print if success if this is the first call or this will
+			# print at each level of recursion once the retry succeeds
+			if first_call:
+				print_and_flush("...retry successful!")
 		else:
-			print("!!! GatewayTimeout. Retry limit reached :(")
+			print_and_flush("!!! GatewayTimeout. Retry limit reached :(")
 			raise
 
 # Prints data to standard out
