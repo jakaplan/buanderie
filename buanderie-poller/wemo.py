@@ -7,6 +7,7 @@ from collections import namedtuple
 from google.cloud import datastore
 from google.api.core.exceptions import GatewayTimeout
 from ouimeaux.environment import Environment
+from requests.exceptions import ConnectionError
 from threading import Thread
 
 Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
@@ -129,14 +130,20 @@ def read_and_upload_loop(washer, dryer):
 	print_and_flush("Starting read and upload loop with %d upload retries" % args.upload_retries)
 	while True:
 		for switch in switches:
-			reading = Reading(switch.name, switch.current_power, datetime.datetime.utcnow())
+			try:
+				reading_start = datetime.datetime.utcnow()
+				reading = Reading(switch.name, switch.current_power, datetime.datetime.utcnow())
+			except ConnectionError as err:
+				elapsed_time_seconds = (datetime.datetime.utcnow() - reading_start).total_seconds()
+				print_and_flush("!!! Reading switch failed after %d seconds" % elapsed_time_seconds)
+				raise
 
 			if args.debug:
 				debug_print(reading)
 			else:
 				upload(client, key, reading, args.upload_retries)
 
-			switch.on()	# ensure that switch is turned back on in case of power failure
+			switch.on()	# Ensure that switch is turned back on in case of power failure
 			time.sleep(args.sleep_interval)
 
 # Prints to standard out and flushes. This matters because the Linux system
