@@ -1,6 +1,6 @@
 ## Setup instructions
 Overview:
- - Install Python 3, pip, and virtualenv.
+ - Install Python 3, pip3, and virtualenv.
  - Install dependencies.
  - Configure Google Cloud credentials
 
@@ -31,13 +31,43 @@ It is named `607 Frederick-642acd401797.json`. Now set this as an environment
 variable:
 `export GOOGLE_APPLICATION_CREDENTIALS=<path to json file>`
 
-**TODO** Figure out how to set the Google Cloud credentials within the virtualenv
-instead of globally.
-
 Now we're ready to run the poller:
 `env/bin/python tplink.py`
 
 That's it!
+
+## Run on system start
+It's likely you'll want to have the tplink.py code run automatically on system start.
+On Linux, the way to do this is using `systemctl`.
+
+In `/lib/systemd/system/` create a file called `tplink.service`. This will require
+`sudo`:
+`sudo touch tplink.service`
+
+In this file write:
+```[Unit]
+Description=Wemo Poller
+After=multi-user.target
+[Service]
+Type=simple
+Environment="GOOGLE_APPLICATION_CREDENTIALS=<full path to json file>"
+ExecStart=<full path to env python> <full path to tplink.py>
+Restart=on-abort
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable this service:
+`sudo systemctl enable tplink`
+
+Start the service (or restart the device and then it'll autostart):
+`sudo systemctl start tplink`
+
+If you want to inspect the status at any time:
+`systemctl status tplink`
+
+And if you ever want to stop it, for example to upgrade the code it's running:
+`sudo systemctl stop tplink`
 
 ## Dependencies
 Python dependencies are specified in `requirements.txt`
