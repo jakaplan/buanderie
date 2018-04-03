@@ -4,11 +4,12 @@ import sys
 import time
 
 from collections import namedtuple
+from threading import Thread
+
 from google.cloud import datastore
 from google.api.core.exceptions import GatewayTimeout
 from ouimeaux.environment import Environment
 from requests.exceptions import ConnectionError
-from threading import Thread
 
 Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
 
@@ -70,6 +71,8 @@ def discover_switches():
     if 'Washer' not in switches or 'Dryer' not in switches:
         print_and_flush("!!! Failed to find both switches before broadcast timeout of %d seconds"
                         % args.discovery_timeout)
+
+    environment.wait()
 
 def upload(client, key, reading, retries_remaining=1, first_call=True):
     """Uploads data to Google"""
@@ -175,6 +178,10 @@ def print_and_flush(text):
 	record system out at the time print was called otherwise, which is really useful when
 	debugging.
 	"""
+
+    # If in debug mode, prefix the output with the current date and time
+    if args and args.debug:
+        text = '%s\t%s' % (datetime.datetime.utcnow(), text)
 
     print text
     sys.stdout.flush()
