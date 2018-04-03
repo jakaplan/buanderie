@@ -38,7 +38,7 @@ Now we're ready to run the poller:
 That's it!
 
 ## Run on system start
-It's likely you'll want to have the tplink.py code run automatically on system start.
+It's likely you'll want to have the `poller.py` code run automatically on system start.
 On Linux, the way to do this is using `systemctl`.
 
 In `/lib/systemd/system/` create a file called `buanderie-poller.service`. This will require
