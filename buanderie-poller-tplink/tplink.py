@@ -51,7 +51,7 @@ class TPLinkPlugUploader:
 
         entity = datastore.Entity(key=self.key)
         entity['switch'] = str(reading.switch)
-        entity['draw'] = int(reading.draw * 1000)
+        entity['draw'] = int(reading.draw)
         entity['timestamp'] = reading.timestamp
 
         # According to https://cloud.google.com/pubsub/docs/reference/error-codes
@@ -98,7 +98,14 @@ class TPLinkPlugUploader:
             for plug in plugs:
                 reading_start = datetime.datetime.utcnow()
                 
-                power = plug.get_emeter_realtime()['power'] # Can raise SmartDeviceException
+                try:
+                    power = plug.get_emeter_realtime()['power'] * 1000 # Server expects milliwatts
+                    if args.debug:
+                        rssi = plug.rssi
+                except SmartDeviceException:
+                    self.log_error("Unable to read plug %s, continuing for now" % plug.label)
+                    continue
+                
                 reading = Reading(plug.label, power, datetime.datetime.utcnow())
 
                 # If it took more than 60 seconds to read, print out to track this happening
@@ -109,7 +116,7 @@ class TPLinkPlugUploader:
                 
                 if args.debug:
                     self.upload_debug(reading)
-                    self.log("\tread in %s seconds with rssi %d" % (reading_duration_seconds, plug.rssi))
+                    self.log("\tread in %s seconds with rssi %d" % (reading_duration_seconds, rssi))
                 else:
                     self.upload(reading, args.upload_retries)
 

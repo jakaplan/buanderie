@@ -7,8 +7,11 @@ Overview:
 If Python is installed, pip can be installed:
 `sudo easy_install pip3`.
 
+If that doesn't work, on Linux can use:
+`sudo apt-get install python3-pip`.
+
 Once pip is installed, virtualenv can be installed:
-`sudo pip install virtualenv`. 
+`sudo pip3 install virtualenv`. 
 
 Then use virtualenv to create its environment folder by typing
 `virtualenv env`. This will create a folder called `env` which
