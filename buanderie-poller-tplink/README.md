@@ -46,7 +46,7 @@ In `/lib/systemd/system/` create a file called `tplink.service`. This will requi
 
 In this file write:
 ```[Unit]
-Description=Wemo Poller
+Description=Washer & Dryer Poller
 After=multi-user.target
 [Service]
 Type=simple
