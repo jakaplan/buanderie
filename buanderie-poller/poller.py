@@ -5,14 +5,16 @@ import time
 
 from collections import namedtuple
 
-Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
-
+# External dependencies
 from google.cloud import datastore
 from google.api.core.exceptions import GatewayTimeout
 from pyHS100 import Discover
 from pyHS100.smartdevice import SmartDeviceException
 
+
 class TPLinkPlugUploader:
+    Reading = namedtuple('Reading', ['switch', 'draw', 'timestamp'])
+
     def __init__(self, args):
         self.args = args
 
@@ -23,10 +25,10 @@ class TPLinkPlugUploader:
             self.key = self.client.key('Reading')
 
     def start(self, mac_addresses):
-        plugs = self.discover_plugs(mac_addresses)
-        self.read_and_upload_loop(plugs)
+        plugs = self.__discover_plugs(mac_addresses)
+        self.__read_and_upload_loop(plugs)
 
-    def discover_plugs(self, mac_addresses):
+    def __discover_plugs(self, mac_addresses):
         self.log("Starting discovery with a %d second timeout" % args.discovery_timeout)
         devices = Discover.discover(timeout=args.discovery_timeout).values()
         self.log("Discovery complete")
@@ -46,12 +48,12 @@ class TPLinkPlugUploader:
 
         return plugs
 
-    def upload(self, reading, retries_remaining=1, first_call=True):
+    def __upload(self, reading, retries_remaining=1, first_call=True):
         """Uploads data to Google"""
 
         entity = datastore.Entity(key=self.key)
-        entity['switch'] = str(reading.switch)
-        entity['draw'] = int(reading.draw)
+        entity['switch'] = reading.switch
+        entity['draw'] = reading.draw
         entity['timestamp'] = reading.timestamp
 
         # According to https://cloud.google.com/pubsub/docs/reference/error-codes
@@ -65,7 +67,7 @@ class TPLinkPlugUploader:
         # may result in the operation being executed more than once on the server."
         #
         # As a result, if this error is encountered we'll retry if we haven't
-        # reached out retry limit.
+        # reached our retry limit.
         try:
             self.client.put(entity)
         except GatewayTimeout:
@@ -73,8 +75,7 @@ class TPLinkPlugUploader:
             if retries_remaining > 0:
                 self.log_error("GatewayTimeout. Retries remaining: %d. About to retry..."
                                 % retries_remaining)
-
-                self.upload(reading, retries_remaining - 1, False)
+                self.__upload(reading, retries_remaining - 1, False)
 
                 # Only print if success if this is the first call or this will
                 # print at each level of recursion once the retry succeeds
@@ -84,12 +85,12 @@ class TPLinkPlugUploader:
                 self.log_error("GatewayTimeout. Retry limit reached :(")
                 raise
 
-    def upload_debug(self, reading):
+    def __upload_debug(self, reading):
         """Prints data to standard out instead of logging"""
 
         self.log('%s\t%s\t%s' % (reading.switch, reading.draw, reading.timestamp))
 
-    def read_and_upload_loop(self, plugs):
+    def __read_and_upload_loop(self, plugs):
         """Loop that indefinitely reads power draw of plugs and uploads the readings"""
 
         self.log("Starting read and upload loop with a %d second read interval and %d upload retries"
@@ -99,26 +100,22 @@ class TPLinkPlugUploader:
                 reading_start = datetime.datetime.utcnow()
                 
                 try:
-                    power = plug.get_emeter_realtime()['power'] * 1000 # Server expects milliwatts
+                    # Server expects milliwatts as an integer, plug reports watts as a float
+                    power = int(plug.get_emeter_realtime()['power'] * 1000) 
                     if args.debug:
                         rssi = plug.rssi
                 except SmartDeviceException:
                     self.log_error("Unable to read plug %s, continuing for now" % plug.label)
                     continue
                 
-                reading = Reading(plug.label, power, datetime.datetime.utcnow())
-
-                # If it took more than 60 seconds to read, print out to track this happening
-                reading_duration_seconds = (datetime.datetime.utcnow() - reading_start).total_seconds()
-                if reading_duration_seconds > 60:
-                    self.log_error("Reading plug %s succeeded after %s seconds"
-                                    % (plug.label, reading_duration_seconds))
+                reading = TPLinkPlugUploader.Reading(plug.label, power, datetime.datetime.utcnow())
                 
                 if args.debug:
-                    self.upload_debug(reading)
+                    self.__upload_debug(reading)
+                    reading_duration_seconds = (datetime.datetime.utcnow() - reading_start).total_seconds()
                     self.log("\tread in %s seconds with rssi %d" % (reading_duration_seconds, rssi))
                 else:
-                    self.upload(reading, args.upload_retries)
+                    self.__upload(reading, args.upload_retries)
 
                 time.sleep(args.read_interval)
 
@@ -130,10 +127,9 @@ class TPLinkPlugUploader:
 
 # Parse command line arguments
 def parse_args(raw_args):
-    """Parses the optional command line arguments
+    """Parses  optional command line arguments
 
-    In the process of doing so sets the defaults for the amount of time to sleep between readings
-    and the discovery timeout to find the plugs.
+    In the process of doing so sets defaults for any optional arguments not provided.
     """
     # Defaults
     READ_INTERVAL = 5 # Default sleep time between reading a plug and then uploading data, in seconds
