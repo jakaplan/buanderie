@@ -25,10 +25,16 @@ class TPLinkPlugUploader:
             self.key = self.client.key('Reading')
 
     def start(self):
+        """Starts the uploader by finding plugs and then in a loop reading from the plugs and
+        uploading the reading data"""
+
         plugs = self.__discover_plugs(self.mac_addresses)
         self.__read_and_upload_loop(plugs)
 
     def __discover_plugs(self, mac_addresses):
+        """Finds plugs with the MAC addresses specified and returns them. If not all plugs are
+        found then an exception will be raised""" 
+
         self.__log("➡ Starting discovery with a %d second timeout" % args.discovery_timeout)
         devices = Discover.discover(timeout=args.discovery_timeout).values()
         self.__log("✔ Discovery complete")
@@ -49,8 +55,23 @@ class TPLinkPlugUploader:
 
         return plugs
 
+    def __read_and_upload_loop(self, plugs):
+        """Loop that indefinitely reads power draw of plugs and uploads the readings"""
+
+        self.__log("❇ Starting read and upload loop with a %d second read interval and %d upload retries"
+                % (args.read_interval, args.upload_retries))
+        
+        while True:
+            for plug in plugs:
+                reading = self.__read(plug, args.read_retries)
+                
+                if not args.debug:
+                    self.__upload(reading, args.upload_retries)
+
+                time.sleep(args.read_interval)
+
     def __read(self, plug, retries_remaining=3, first_call=True):
-        """Reads the power draw of a plug"""
+        """Reads the power draw of a plug and returns the reading"""
 
         if args.debug:
             reading_start = datetime.datetime.utcnow()
@@ -118,26 +139,7 @@ class TPLinkPlugUploader:
             else:
                 self.__log_error("GatewayTimeout. Retry limit reached :(")
                 raise
-
-    def __read_and_upload_loop(self, plugs):
-        """Loop that indefinitely reads power draw of plugs and uploads the readings"""
-
-        self.__log("❇ Starting read and upload loop with a %d second read interval and %d upload retries"
-                % (args.read_interval, args.upload_retries))
-        
-        while True:
-            for plug in plugs:
-                reading = self.__read(plug, args.read_retries)
-                
-                if not args.debug:
-                    self.__upload(reading, args.upload_retries)
-
-                time.sleep(args.read_interval)
-
-        # If we've reached here, we intentionally broke out of the loop due to an issue, so restart
-        self.__log("Restarting...")
-        self.start()
-
+    
     def __log(self, text):
         print_and_flush(text, self.args.debug)
 
@@ -154,7 +156,7 @@ def parse_args(raw_args):
     READ_INTERVAL = 5 # Default sleep time between reading a plug and then uploading data, in seconds
     DISCOVERY_TIMEOUT = 5 # Default duration of discovery broadcast, in seconds
     UPLOAD_RETRIES = 10 # Default number of times to retry uploading a reading to the server
-    READ_RETRIES = 3 # Default number of times to retry reading a plug
+    READ_RETRIES = 10 # Default number of times to retry reading a plug
 
     description = "Reads Washer and Dryer TP-Link HS110 Plugs"
     parser = argparse.ArgumentParser(description=description)
