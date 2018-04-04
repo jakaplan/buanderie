@@ -56,10 +56,11 @@ class TPLinkPlugUploader:
         return plugs
 
     def __read_and_upload_loop(self, plugs):
-        """Loop that indefinitely reads power draw of plugs and uploads the readings"""
+        """Loop that indefinitely reads the power draw of plugs and uploads the readings"""
 
-        self.__log("❇ Starting read and upload loop with a %d second read interval and %d upload retries"
-                % (args.read_interval, args.upload_retries))
+        self.__log("❇ Starting read and upload loop")
+        self.__log("❇ %d second polling interval | %d read retries | %d upload retries"
+        % (args.polling_interval, args.read_retries, args.upload_retries))
         
         while True:
             for plug in plugs:
@@ -68,7 +69,7 @@ class TPLinkPlugUploader:
                 if not args.debug:
                     self.__upload(reading, args.upload_retries)
 
-                time.sleep(args.read_interval)
+                time.sleep(args.polling_interval)
 
     def __read(self, plug, retries_remaining=3, first_call=True):
         """Reads the power draw of a plug and returns the reading"""
@@ -153,7 +154,7 @@ def parse_args(raw_args):
     In the process of doing so sets defaults for any optional arguments not provided.
     """
     # Defaults
-    READ_INTERVAL = 5 # Default sleep time between reading a plug and then uploading data, in seconds
+    POLLING_INTERVAL = 5 # Default sleep time between reading a plug and then uploading data, in seconds
     DISCOVERY_TIMEOUT = 5 # Default duration of discovery broadcast, in seconds
     UPLOAD_RETRIES = 10 # Default number of times to retry uploading a reading to the server
     READ_RETRIES = 10 # Default number of times to retry reading a plug
@@ -161,15 +162,15 @@ def parse_args(raw_args):
     description = "Reads Washer and Dryer TP-Link HS110 Plugs"
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('-d', '--debug', dest='debug', action='store_true',
-                        help='Write readings to stdout instead of saving to the database')
-    parser.add_argument('-i', '--read_interval', type=int, default=READ_INTERVAL,
-                        help='Time between reads, in seconds')
+                        help='Write readings to stdout instead of uploading to Google')
     parser.add_argument('-t', '--discovery_timeout', type=int, default=DISCOVERY_TIMEOUT,
                         help='TP-Link plug discovery timeout, in seconds')
-    parser.add_argument('-u', '--upload_retries', type=int, default=UPLOAD_RETRIES,
-                        help='Number of times to retry uploading a reading to Google')
     parser.add_argument('-r', '--read_retries', type=int, default=READ_RETRIES,
                         help='Number of times to retry getting a reading from a plug')
+    parser.add_argument('-u', '--upload_retries', type=int, default=UPLOAD_RETRIES,
+                        help='Number of times to retry uploading a reading to Google')
+    parser.add_argument('-p', '--polling_interval', type=int, default=POLLING_INTERVAL,
+                        help='Time between reads, in seconds')
 
     return parser.parse_args(raw_args)
 
