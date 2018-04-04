@@ -49,6 +49,39 @@ class TPLinkPlugUploader:
 
         return plugs
 
+    def __read(self, plug, retries_remaining=3, first_call=True):
+        """Reads the power draw of a plug"""
+
+        if args.debug:
+            reading_start = datetime.datetime.utcnow()
+        
+        try:
+            # Server expects milliwatts as an integer, plug reports watts as a float
+            power = int(plug.get_emeter_realtime()['power'] * 1000)
+            reading = TPLinkPlugUploader.Reading(plug.label, power, datetime.datetime.utcnow())
+
+            if self.args.debug:
+                reading_duration = (datetime.datetime.utcnow() - reading_start).total_seconds()
+                rssi = plug.rssi
+                self.__log('%s\t%sW\treported at %s in %s seconds with rssi %d' %
+                (reading.switch, reading.draw, reading.timestamp, reading_duration, rssi))
+        except SmartDeviceException:
+            # If we haven't hit the retry limit, retry
+            if retries_remaining > 0:
+                self.__log_error("SmartDeviceException raised for %s. Retries remaining: %d. About to retry..."
+                                % (plug.label, retries_remaining))
+                reading = self.__read(plug, retries_remaining - 1, False)
+
+                # Only print if success if this is the first call or this will
+                # print at each level of recursion once the retry succeeds
+                if first_call:
+                    self.__log("...read retry successful!")
+            else:
+                self.__log_error("SmartDeviceException raised for %s. Retry limit reached :(" % plug.label)
+                raise
+        
+        return reading
+
     def __upload(self, reading, retries_remaining=1, first_call=True):
         """Uploads data to Google"""
 
@@ -81,41 +114,22 @@ class TPLinkPlugUploader:
                 # Only print if success if this is the first call or this will
                 # print at each level of recursion once the retry succeeds
                 if first_call:
-                    self.__log("...retry successful!")
+                    self.__log("...upload retry successful!")
             else:
                 self.__log_error("GatewayTimeout. Retry limit reached :(")
                 raise
-
-    def __upload_debug(self, reading):
-        """Prints data to standard out instead of uploading to Google"""
-
-        self.__log('%s\t%s\t%s' % (reading.switch, reading.draw, reading.timestamp))
 
     def __read_and_upload_loop(self, plugs):
         """Loop that indefinitely reads power draw of plugs and uploads the readings"""
 
         self.__log("❇ Starting read and upload loop with a %d second read interval and %d upload retries"
                 % (args.read_interval, args.upload_retries))
+        
         while True:
             for plug in plugs:
-                reading_start = datetime.datetime.utcnow()
+                reading = self.__read(plug, args.read_retries)
                 
-                try:
-                    # Server expects milliwatts as an integer, plug reports watts as a float
-                    power = int(plug.get_emeter_realtime()['power'] * 1000) 
-                    if args.debug:
-                        rssi = plug.rssi
-                except SmartDeviceException:
-                    self.__log_error("Unable to read plug %s" % plug.label)
-                    break
-                
-                reading = TPLinkPlugUploader.Reading(plug.label, power, datetime.datetime.utcnow())
-                
-                if args.debug:
-                    self.__upload_debug(reading)
-                    reading_duration_seconds = (datetime.datetime.utcnow() - reading_start).total_seconds()
-                    self.__log("\tread in %s seconds with rssi %d" % (reading_duration_seconds, rssi))
-                else:
+                if not args.debug:
                     self.__upload(reading, args.upload_retries)
 
                 time.sleep(args.read_interval)
@@ -140,6 +154,7 @@ def parse_args(raw_args):
     READ_INTERVAL = 5 # Default sleep time between reading a plug and then uploading data, in seconds
     DISCOVERY_TIMEOUT = 5 # Default duration of discovery broadcast, in seconds
     UPLOAD_RETRIES = 10 # Default number of times to retry uploading a reading to the server
+    READ_RETRIES = 3 # Default number of times to retry reading a plug
 
     description = "Reads Washer and Dryer TP-Link HS110 Plugs"
     parser = argparse.ArgumentParser(description=description)
@@ -149,8 +164,10 @@ def parse_args(raw_args):
                         help='Time between reads, in seconds')
     parser.add_argument('-t', '--discovery_timeout', type=int, default=DISCOVERY_TIMEOUT,
                         help='TP-Link plug discovery timeout, in seconds')
-    parser.add_argument('-r', '--upload_retries', type=int, default=UPLOAD_RETRIES,
+    parser.add_argument('-u', '--upload_retries', type=int, default=UPLOAD_RETRIES,
                         help='Number of times to retry uploading a reading to Google')
+    parser.add_argument('-r', '--read_retries', type=int, default=READ_RETRIES,
+                        help='Number of times to retry getting a reading from a plug')
 
     return parser.parse_args(raw_args)
 
