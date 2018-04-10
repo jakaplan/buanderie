@@ -71,7 +71,7 @@ class TPLinkPlugUploader:
 
                 time.sleep(args.polling_interval)
 
-    def __read(self, plug, retries_remaining=3, first_call=True):
+    def __read(self, plug, retries_remaining=1, first_call=True):
         """Reads the power draw of a plug and returns the reading"""
 
         if args.debug:
@@ -82,7 +82,7 @@ class TPLinkPlugUploader:
             power = int(plug.get_emeter_realtime()['power'] * 1000)
             reading = TPLinkPlugUploader.Reading(plug.label, power, datetime.datetime.utcnow())
 
-            if self.args.debug:
+            if args.debug:
                 reading_duration = (datetime.datetime.utcnow() - reading_start).total_seconds()
                 rssi = plug.rssi
                 self.__log('%s\t%sW\treported at %s in %s seconds with rssi %d' %
@@ -94,7 +94,7 @@ class TPLinkPlugUploader:
                                 % (plug.label, retries_remaining))
                 reading = self.__read(plug, retries_remaining - 1, False)
 
-                # Only print if success if this is the first call or this will
+                # Only print success if this is the first call or this will
                 # print at each level of recursion once the retry succeeds
                 if first_call:
                     self.__log("...read retry successful!")
@@ -133,7 +133,7 @@ class TPLinkPlugUploader:
                                 % retries_remaining)
                 self.__upload(reading, retries_remaining - 1, False)
 
-                # Only print if success if this is the first call or this will
+                # Only print success if this is the first call or this will
                 # print at each level of recursion once the retry succeeds
                 if first_call:
                     self.__log("...upload retry successful!")
