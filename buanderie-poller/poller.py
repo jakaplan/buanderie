@@ -1,9 +1,11 @@
 import argparse
+import csv
 import datetime
 import sys
 import time
 
 from collections import namedtuple
+from pathlib import Path
 
 # External dependencies
 from google.cloud import datastore
@@ -66,7 +68,9 @@ class TPLinkPlugUploader:
             for plug in plugs:
                 reading = self.__read(plug, args.read_retries)
                 
-                if not args.debug:
+                if args.write_to_log:
+                    self.__write_to_csv(reading)
+                elif not args.debug:
                     self.__upload(reading, args.upload_retries)
 
                 time.sleep(args.polling_interval)
@@ -99,7 +103,7 @@ class TPLinkPlugUploader:
                 if first_call:
                     self.__log("...read retry successful!")
             else:
-                self.__log_error("SmartDeviceException raised for %s. Retry limit reached :(" % plug.label)
+                self.__log_error("SmartDeviceException raised for %s. Retry limit reached 😰" % plug.label)
                 raise
         
         return reading
@@ -141,6 +145,27 @@ class TPLinkPlugUploader:
                 self.__log_error("GatewayTimeout. Retry limit reached :(")
                 raise
     
+    def __write_to_csv(self, reading):
+        """Writes reading to a CSV file. Creates a new CSV file for each plug for each UTC day."""
+
+        filepath = 'data/%s_%s_poller_data.csv' % (reading.switch, reading.timestamp.date())
+        csvfile = Path(filepath)
+        file_exists = csvfile.is_file()
+        if not file_exists:
+            if not csvfile.parent.exists():
+                csvfile.parent.mkdir()
+            csvfile.touch()
+
+            self.__log("Created new CSV file: %s" % str(csvfile.resolve()))
+
+        with csvfile.open(mode='a', newline='') as fhandle:
+            writer = csv.writer(fhandle, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+
+            if not file_exists:
+                writer.writerow(['Date', 'Time', 'Draw'])
+            
+            writer.writerow([reading.timestamp.date(), reading.timestamp.time(), reading.draw])
+
     def __log(self, text):
         print_and_flush(text, self.args.debug)
 
@@ -171,6 +196,8 @@ def parse_args(raw_args):
                         help='Number of times to retry uploading a reading to Google')
     parser.add_argument('-p', '--polling_interval', type=int, default=POLLING_INTERVAL,
                         help='Time between reads, in seconds')
+    parser.add_argument('-w', '--write_to_log', dest='write_to_log', action='store_true',
+                        help='Write readings to a CSV file instead of uploading to Google')
 
     return parser.parse_args(raw_args)
 
